@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VisionLab — Intelligent Image & Video Analysis Platform</title>
+  <meta name="description" content="VisionLab: A full-featured Computer Vision platform for image preprocessing, feature extraction, segmentation, object detection, optical flow, and video tracking." />
+  <meta name="keywords" content="computer vision, image processing, object detection, YOLO, optical flow, segmentation, SIFT, Canny, Harris" />
+  <meta name="author" content="VisionLab CSE3010" />
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-title" id="loading-title">Processing…</div>
+      <div class="loading-sub" id="loading-sub">Running Computer Vision algorithms</div>
+      <div class="loading-bar-wrap">
+        <div class="loading-bar" id="loading-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="sidebar-logo">👁</span>
+      <div>
+        <div class="sidebar-name">VisionLab</div>
+        <div class="sidebar-tagline">CV Platform</div>
+      </div>
+    </div>
+    <div class="sidebar-section-label">MODES</div>
+    <a href="#home"  class="nav-item" id="nav-home"  onclick="navigate('home')">
+      <span class="nav-icon">🏠</span><span>Home</span>
+    </a>
+    <a href="#image" class="nav-item" id="nav-image" onclick="navigate('image')">
+      <span class="nav-icon">🖼️</span><span>Image Analysis</span>
+    </a>
+    <a href="#video" class="nav-item" id="nav-video" onclick="navigate('video')">
+      <span class="nav-icon">🎬</span><span>Video Analysis</span>
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">IMAGE MODULES</div>
+    <button class="nav-sub-item" onclick="navigate('image','preprocessing')">
+      <span class="nav-icon">🔧</span><span>Preprocessing</span>
+    </button>
+    <button class="nav-sub-item" onclick="navigate('image','features')">
+      <span class="nav-icon">🔍</span><span>Feature Analysis</span>
+    </button>
+    <button class="nav-sub-item" onclick="navigate('image','segmentation')">
+      <span class="nav-icon">🎭</span><span>Segmentation</span>
+    </button>
+    <button class="nav-sub-item" onclick="navigate('image','detection')">
+      <span class="nav-icon">🎯</span><span>Object Detection</span>
+    </button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">VIDEO MODULES</div>
+    <button class="nav-sub-item" onclick="navigate('video','info')">
+      <span class="nav-icon">ℹ️</span><span>Video Info</span>
+    </button>
+    <button class="nav-sub-item" onclick="navigate('video','tracking')">
+      <span class="nav-icon">📡</span><span>Detection & Tracking</span>
+    </button>
+    <button class="nav-sub-item" onclick="navigate('video','motion')">
+      <span class="nav-icon">〰️</span><span>Motion Analysis</span>
+    </button>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-text">CSE3010 Computer Vision</div>
+      <div class="sidebar-footer-sub">VisionLab v1.0</div>
+    </div>
+  </nav>
+
+  <!-- Mobile menu toggle -->
+  <button class="menu-toggle" id="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
+
+  <!-- Main Content -->
+  <main class="main-content" id="main-content">
+    <div id="app"><!-- Pages rendered here --></div>
+  </main>
+
+  <!-- JS Modules -->
+  <script src="js/api.js"></script>
+  <script src="js/components/progressOverlay.js"></script>
+  <script src="js/components/dashboard.js"></script>
+  <script src="js/pages/home.js"></script>
+  <script src="js/pages/image_mode.js"></script>
+  <script src="js/pages/video_mode.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
