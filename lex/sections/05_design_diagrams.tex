@@ -1,0 +1,326 @@
+\section{Design Diagrams}
+
+\subsection{Use Case Diagram}
+The Use Case diagram in Figure~\ref{fig:use_case} defines the interactions between the primary actor (the Computer Vision Student / Evaluator) and the functional use cases encapsulated within the VisionLab platform boundary.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        actor/.style={circle, draw=cyan!80, fill=blue!10, thick, minimum size=1.0cm, inner sep=0pt},
+        usecase/.style={ellipse, draw=cyan!80, fill=blue!5, thick, text width=3.4cm, align=center, inner sep=4pt, font=\small},
+        system/.style={rectangle, draw=cyan!60, dashed, fill=gray!3, thick, inner sep=12pt, rounded corners=8pt}
+    ]
+        % System Boundary
+        \node[system, minimum width=11.5cm, minimum height=14.5cm, label={[anchor=north, font=\bfseries, text=cyan!90]above:VisionLab Platform Boundary}] (sys) at (3.8, -4.5) {};
+
+        % Actor
+        \node[actor] (user) at (-2.2, -4.5) {};
+        \node[font=\bfseries, below=0.1cm of user, align=center] {CV Student /\\Evaluator};
+
+        % Image Use Cases
+        \node[usecase] (uc1) at (3.5, 1.8) {UC-1: Image Preprocessing\\(11 Operations)};
+        \node[usecase] (uc2) at (3.5, 0.4) {UC-2: Feature Extraction\\(Canny, SIFT, Harris, HOG)};
+        \node[usecase] (uc3) at (3.5, -1.0) {UC-3: Image Segmentation\\(K-Means, Mean Shift)};
+        \node[usecase] (uc4) at (3.5, -2.4) {UC-4: YOLOv8 Object Detection\\(Anchor-Free NMS)};
+
+        % Common include
+        \node[usecase, draw=purple!80, fill=purple!5] (uc_param) at (7.8, -1.0) {UC-5: Tune Mathematical\\Hyperparameters};
+
+        % Video Use Cases
+        \node[usecase] (uc5) at (3.5, -4.5) {UC-6: Video Metadata \&\\Keyframe Extraction};
+        \node[usecase] (uc6) at (3.5, -6.0) {UC-7: ByteTrack Multi-Target\\Tracking};
+        \node[usecase] (uc7) at (3.5, -7.5) {UC-8: Compute Optical Flow\\\& Motion Dynamics};
+
+        % Architecture & Export
+        \node[usecase] (uc8) at (3.5, -9.0) {UC-9: Export Telemetry \&\\JSON Benchmarks};
+        \node[usecase] (uc9) at (3.5, -10.4) {UC-10: Inspect Interactive\\System Architecture};
+
+        % Connections from Actor
+        \draw[thick, draw=cyan!70] (user) -- (uc1.west);
+        \draw[thick, draw=cyan!70] (user) -- (uc2.west);
+        \draw[thick, draw=cyan!70] (user) -- (uc3.west);
+        \draw[thick, draw=cyan!70] (user) -- (uc4.west);
+        \draw[thick, draw=cyan!70] (user) -- (uc5.west);
+        \draw[thick, draw=cyan!70] (user) -- (uc6.west);
+        \draw[thick, draw=cyan!70] (user) -- (uc7.west);
+        \draw[thick, draw=cyan!70] (user) -- (uc8.west);
+        \draw[thick, draw=cyan!70] (user) -- (uc9.west);
+
+        % Includes
+        \draw[dashed, ->, draw=purple!70] (uc1.east) -- node[above, font=\tiny] {$\ll$include$\gg$} (uc_param.west);
+        \draw[dashed, ->, draw=purple!70] (uc2.east) -- node[above, font=\tiny] {$\ll$include$\gg$} (uc_param.west);
+        \draw[dashed, ->, draw=purple!70] (uc3.east) -- node[above, font=\tiny] {$\ll$include$\gg$} (uc_param.west);
+        \draw[dashed, ->, draw=purple!70] (uc4.east) -- node[above, font=\tiny] {$\ll$include$\gg$} (uc_param.west);
+        \draw[dashed, ->, draw=purple!70] (uc6.east) -- node[below, font=\tiny] {$\ll$include$\gg$} (uc_param.south west);
+
+    \end{tikzpicture}
+    \caption{Use Case Diagram of the VisionLab Academic Platform.}
+    \label{fig:use_case}
+\end{figure}
+
+\clearpage
+
+\subsection{Workflow Diagram}
+Figure~\ref{fig:workflow} presents the complete execution lifecycle, tracing an asset from client ingestion, client-side MIME sanitization, asynchronous REST transmission, OpenCV/YOLO computation, and dual-pane rendering.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        startstop/.style={rectangle, rounded corners=12pt, minimum width=3.0cm, minimum height=0.9cm, text centered, draw=cyan!80, fill=cyan!15, thick},
+        process/.style={rectangle, minimum width=3.4cm, minimum height=0.9cm, text centered, draw=blue!70, fill=blue!10, rounded corners=4pt, thick, font=\small},
+        decision/.style={diamond, aspect=2, minimum width=3.0cm, minimum height=1.0cm, text centered, draw=purple!80, fill=purple!10, thick, font=\footnotesize},
+        arrow/.style={-{Stealth[scale=1.1]}, thick, draw=cyan!80}
+    ]
+        \node[startstop] (start) {User Accesses Portal};
+        \node[process, below=0.6cm of start] (mode) {Select Operational Mode (Image / Video)};
+        \node[process, below=0.6cm of mode] (upload) {Drag \& Drop Media Asset};
+        \node[decision, below=0.6cm of upload] (valid) {Valid MIME \& Header?};
+        \node[process, right=1.2cm of valid, draw=red!70, fill=red!10] (err) {Trigger Toast Error Alert};
+        
+        \node[process, below=0.8cm of valid] (param) {Configure Algorithmic Hyperparameters (Sliders/Select)};
+        \node[process, below=0.6cm of param] (dispatch) {Dispatch Async HTTP POST (Multipart Stream)};
+        \node[decision, below=0.7cm of dispatch] (type) {Task Type?};
+
+        \node[process, left=0.8cm of type, draw=green!70, fill=green!10] (cv) {OpenCV Matrix Execution\\(Convolutions/Gradients)};
+        \node[process, right=0.8cm of type, draw=orange!70, fill=orange!10] (dl) {PyTorch YOLOv8 / ByteTrack\\Inference \& Association};
+
+        \node[process, below=1.0cm of type] (metric) {Compute Performance Timers \& Quantitative Metrics};
+        \node[process, below=0.6cm of metric] (render) {Render Synchronized Split View \& Chart.js Telemetry};
+        \node[startstop, below=0.6cm of render] (finish) {Export Report / Complete};
+
+        % Connectors
+        \draw[arrow] (start) -- (mode);
+        \draw[arrow] (mode) -- (upload);
+        \draw[arrow] (upload) -- (valid);
+        \draw[arrow] (valid) -- node[right, font=\footnotesize] {Yes} (param);
+        \draw[arrow] (valid) -- node[above, font=\footnotesize] {No} (err);
+        \draw[arrow] (err) |- (upload);
+        \draw[arrow] (param) -- (dispatch);
+        \draw[arrow] (dispatch) -- (type);
+        \draw[arrow] (type) -| node[above, font=\footnotesize] {Classical CV} (cv);
+        \draw[arrow] (type) -| node[above, font=\footnotesize] {Deep/Tracking} (dl);
+        \draw[arrow] (cv) |- (metric);
+        \draw[arrow] (dl) |- (metric);
+        \draw[arrow] (metric) -- (render);
+        \draw[arrow] (render) -- (finish);
+
+    \end{tikzpicture}
+    \caption{End-to-End Processing Workflow Diagram of VisionLab.}
+    \label{fig:workflow}
+\end{figure}
+
+\clearpage
+
+\subsection{Sequence Diagram}
+Figure~\ref{fig:sequence} depicts the time-ordered sequence of interactions between the user, the single-page application client, the FastAPI ASGI gateway, backend routers, and the Computer Vision processing engine.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        lifeline/.style={draw=gray!60, dashed, thick},
+        entity/.style={rectangle, draw=cyan!80, fill=blue!10, rounded corners=4pt, thick, minimum width=2.4cm, minimum height=0.8cm, font=\footnotesize\bfseries, align=center},
+        msg/.style={-{Stealth[scale=1.0]}, thick, draw=cyan!80, font=\scriptsize},
+        retmsg/.style={-{Stealth[scale=1.0]}, dashed, thick, draw=purple!80, font=\scriptsize}
+    ]
+        % Entities
+        \node[entity] (usr) at (0, 0) {User / Client};
+        \node[entity] (ui)  at (3.2, 0) {SPA Browser\\(\texttt{app.js})};
+        \node[entity] (api) at (6.6, 0) {FastAPI Gateway\\(\texttt{main.py})};
+        \node[entity] (rt)  at (10.0, 0) {Router Module\\(\texttt{routers/})};
+        \node[entity] (cv)  at (13.4, 0) {CV / YOLO Engine\\(\texttt{OpenCV/PyTorch})};
+
+        % Lifelines
+        \draw[lifeline] (usr) -- (0, -10.5);
+        \draw[lifeline] (ui)  -- (3.2, -10.5);
+        \draw[lifeline] (api) -- (6.6, -10.5);
+        \draw[lifeline] (rt)  -- (10.0, -10.5);
+        \draw[lifeline] (cv)  -- (13.4, -10.5);
+
+        % Messages
+        \draw[msg] (0, -1.0) -- node[above] {1: Select Algorithm \& Sliders} (3.2, -1.0);
+        \draw[msg] (0, -1.8) -- node[above] {2: Click ``Apply / Run''} (3.2, -1.8);
+        
+        \draw[msg] (3.2, -2.5) -- node[above] {3: Mount Progress Spinner} (3.2, -2.9);
+        \draw[thick, draw=cyan!80] (3.2, -2.5) -- (3.7, -2.5) -- (3.7, -2.9) -- (3.2, -2.9);
+
+        \draw[msg] (3.2, -3.5) -- node[above] {4: POST \texttt{/api/image/process} (Form-Data)} (6.6, -3.5);
+        \draw[msg] (6.6, -4.2) -- node[above] {5: Parse Payload \& Dispatch} (10.0, -4.2);
+        \draw[msg] (10.0, -5.0) -- node[above] {6: Execute OpenCV / YOLO Core} (13.4, -5.0);
+
+        % Computation
+        \draw[msg] (13.4, -5.6) -- node[right, font=\tiny] {Compute Matrices/Boxes} (13.4, -6.2);
+        \draw[thick, draw=orange!80] (13.4, -5.6) -- (13.9, -5.6) -- (13.9, -6.2) -- (13.4, -6.2);
+
+        \draw[retmsg] (13.4, -6.8) -- node[above] {7: Return Mat \& Bounding Coordinates} (10.0, -6.8);
+        \draw[retmsg] (10.0, -7.5) -- node[above] {8: Base64 Encode \& Form JSON Schema} (6.6, -7.5);
+        \draw[retmsg] (6.6, -8.3) -- node[above] {9: HTTP 200 OK (JSON Payload)} (3.2, -8.3);
+
+        \draw[msg] (3.2, -8.9) -- node[above] {10: Unmount Progress Spinner} (3.2, -9.3);
+        \draw[thick, draw=cyan!80] (3.2, -8.9) -- (3.7, -8.9) -- (3.7, -9.3) -- (3.2, -9.3);
+
+        \draw[retmsg] (3.2, -9.8) -- node[above] {11: Render Dual Split View \& Chart.js Telemetry} (0, -9.8);
+
+    \end{tikzpicture}
+    \caption{Sequence Diagram of Request Ingestion, Computation, and Response Rendering.}
+    \label{fig:sequence}
+\end{figure}
+
+\clearpage
+
+\subsection{Class and Component Diagram}
+Figure~\ref{fig:class_diag} delineates the modular software architecture, illustrating the class relationships, functional component interfaces, and internal service dependencies across the full-stack system.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        pkg/.style={rectangle, draw=cyan!80, fill=blue!4, thick, inner sep=8pt, rounded corners=6pt},
+        cls/.style={rectangle, draw=cyan!70, fill=white, thick, font=\scriptsize, align=left, inner sep=4pt}
+    ]
+        % Frontend Package
+        \node[pkg, text width=0.45\textwidth, minimum height=7.5cm] (fe) at (0, 0) {
+            \textbf{\small Component: Frontend Client (Port 5500)}\\[4pt]
+            \begin{tikzpicture}
+                \node[cls, text width=5.5cm] (c1) {
+                    \textbf{AppRouter (\texttt{app.js})}\\
+                    + currentPage: String\\
+                    + currentTab: String\\
+                    + navigate(page, tab): void\\
+                    + toggleSidebar(): void
+                };
+                \node[cls, below=0.3cm of c1, text width=5.5cm] (c2) {
+                    \textbf{ApiClient (\texttt{api.js})}\\
+                    + apiHealth(): Promise\\
+                    + apiImageProcess(file, op, params): Promise\\
+                    + apiImageDetect(file, conf, iou): Promise\\
+                    + apiVideoDetect(file, params): Promise
+                };
+                \node[cls, below=0.3cm of c2, text width=5.5cm] (c3) {
+                    \textbf{Dashboard (\texttt{dashboard.js})}\\
+                    + renderHistogram(id, data): void\\
+                    + renderDetectionDonut(id, cats): void\\
+                    + renderDirectionPolar(id, data): void\\
+                    + renderCategoryBar(id, data): void
+                };
+            \end{tikzpicture}
+        };
+
+        % Backend Package
+        \node[pkg, text width=0.45\textwidth, minimum height=7.5cm, right=0.8cm of fe] (be) at (7.0, 0) {
+            \textbf{\small Component: FastAPI Backend (Port 8000)}\\[4pt]
+            \begin{tikzpicture}
+                \node[cls, text width=5.8cm] (b1) {
+                    \textbf{FastAPI App (\texttt{main.py})}\\
+                    + app: FastAPI\\
+                    + add\_middleware(CORSMiddleware)\\
+                    + include\_router(routers...)
+                };
+                \node[cls, below=0.3cm of b1, text width=5.8cm] (b2) {
+                    \textbf{CVUtils (\texttt{cv\_utils.py})}\\
+                    + read\_image(bytes): np.ndarray\\
+                    + encode\_image(np.ndarray): str\\
+                    + compute\_histogram(np.ndarray): dict\\
+                    + decode\_video\_metadata(path): dict
+                };
+                \node[cls, below=0.3cm of b2, text width=5.8cm] (b3) {
+                    \textbf{YOLOService (\texttt{yolo\_service.py})}\\
+                    - \_model: YOLO (Singleton)\\
+                    + get\_model(): YOLO\\
+                    + predict(image, conf, iou): Results\\
+                    + track\_video(path, conf, step): dict
+                };
+            \end{tikzpicture}
+        };
+
+        % Relationship
+        \draw[thick, <->, draw=cyan!80] (fe) -- node[above, font=\footnotesize] {RESTful JSON / Form-Data} (be);
+
+    \end{tikzpicture}
+    \caption{Component and Class Dependency Architecture of VisionLab.}
+    \label{fig:class_diag}
+\end{figure}
+
+\clearpage
+
+\subsection{Entity-Relationship (ER) \& Data Flow Entity Diagram}
+Although VisionLab is deliberately stateless to enable frictionless local deployment, structured data entities govern all internal memory transfers, parameter parsing, and telemetry serialization. Figure~\ref{fig:er_diag} documents these primary data entities and their relational cardinalities.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        entity/.style={rectangle, draw=cyan!80, fill=blue!8, thick, minimum width=3.2cm, minimum height=2.2cm, align=left, font=\scriptsize, rounded corners=3pt},
+        rel/.style={diamond, draw=purple!80, fill=purple!8, thick, aspect=1.6, font=\scriptsize, inner sep=2pt},
+        card/.style={font=\footnotesize\bfseries, text=cyan!90}
+    ]
+        % Entities
+        \node[entity] (asset) at (0, 0) {
+            \textbf{\normalsize MediaAsset}\\
+            \rule{3.0cm}{0.4pt}\\
+            \underline{asset\_id}: UUID\\
+            file\_name: String\\
+            file\_size: Long\\
+            mime\_type: String\\
+            width: Integer\\
+            height: Integer\\
+            channels: Integer
+        };
+
+        \node[rel] (r1) at (4.5, 0) {Configured By};
+
+        \node[entity] (config) at (9.0, 0) {
+            \textbf{\normalsize OperationConfig}\\
+            \rule{3.0cm}{0.4pt}\\
+            \underline{config\_id}: UUID\\
+            module\_id: Integer\\
+            algorithm\_name: String\\
+            kernel\_size: Integer\\
+            conf\_thresh: Float\\
+            iou\_thresh: Float\\
+            frame\_step: Integer
+        };
+
+        \node[rel] (r2) at (4.5, -4.0) {Produces};
+
+        \node[entity] (res) at (4.5, -7.5) {
+            \textbf{\normalsize AnalysisResult}\\
+            \rule{3.0cm}{0.4pt}\\
+            \underline{result\_id}: UUID\\
+            output\_b64: Text\\
+            latency\_ms: Float\\
+            timestamp: DateTime\\
+            description: String
+        };
+
+        \node[entity] (track) at (0, -7.5) {
+            \textbf{\normalsize TrackedObject}\\
+            \rule{3.0cm}{0.4pt}\\
+            \underline{track\_id}: Integer\\
+            class\_label: String\\
+            max\_conf: Float\\
+            bbox\_coords: Array\\
+            trajectory: Array
+        };
+
+        \node[entity] (kf) at (9.0, -7.5) {
+            \textbf{\normalsize Keyframe}\\
+            \rule{3.0cm}{0.4pt}\\
+            \underline{keyframe\_id}: Integer\\
+            frame\_idx: Integer\\
+            timestamp\_sec: Float\\
+            image\_b64: Text
+        };
+
+        % Connectors
+        \draw[thick] (asset) -- node[above, card] {1} (r1);
+        \draw[thick] (r1) -- node[above, card] {M} (config);
+
+        \draw[thick] (asset.south) |- (r2);
+        \draw[thick] (config.south) |- (r2);
+        \draw[thick] (r2) -- node[right, card] {1} (res);
+
+        \draw[thick] (res) -- node[above, card] {1} (track);
+        \draw[thick] (res) -- node[above, card] {1} (kf);
+
+    \end{tikzpicture}
+    \caption{Entity-Relationship (ER) \& Data Flow Diagram.}
+    \label{fig:er_diag}
+\end{figure}

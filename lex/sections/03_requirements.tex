@@ -1,0 +1,45 @@
+\section{Functional Requirements}
+
+The functional capabilities of VisionLab are categorized across the platform's two core operational modes (Mode A: Image Analysis and Mode B: Video Analysis) alongside core platform export and architectural utilities:
+
+\subsubsection{Mode A: Image Analysis}
+\begin{itemize}
+    \item \textbf{FR-1.1 (Low-Level Filtering \& Spatial Convolutions):} The system shall support image smoothing and enhancement operations including Gaussian Blur (kernel sizes $3\times3$ to $31\times31$), Median Filtering (window sizes $3\times3$ to $21\times21$), and Laplacian high-pass sharpening via discrete spatial convolution kernels:
+    \begin{equation}
+        K_{\text{Laplacian}} = \begin{bmatrix} 0 & -1 & 0 \\ -1 & 5 & -1 \\ 0 & -1 & 0 \end{bmatrix}
+    \end{equation}
+    \item \textbf{FR-1.2 (Intensity \& Histogram Operations):} The system shall generate pixel intensity distribution histograms across grayscale and individual RGB color channels, and perform global Histogram Equalization to enhance low-contrast inputs.
+    \item \textbf{FR-1.3 (Thresholding Operations):} The system shall implement global and local adaptive thresholding, including Otsu's optimal intra-class variance minimization, Adaptive Mean thresholding, and Adaptive Gaussian thresholding.
+    \item \textbf{FR-1.4 (Mathematical Morphology):} The system shall provide morphological transformations including Dilation, Erosion, Opening, Closing, and Morphological Gradient using Rectangular, Elliptic, and Cross structuring elements.
+    \item \textbf{FR-2.1 (Edge \& Gradient Detection):} The system shall extract image boundaries using Sobel horizontal/vertical first-order derivatives, Laplacian second-order derivatives, and the multi-stage Canny edge detector with tunable hysteresis thresholds.
+    \item \textbf{FR-2.2 (Geometric Feature Detection):} The system shall compute the Probabilistic Hough Line Transform to detect collinear structures within gradient maps.
+    \item \textbf{FR-2.3 (Corner \& Keypoint Detection):} The system shall compute Harris corner response maps based on the structure tensor $M$, and extract scale-invariant keypoints using Difference-of-Gaussians (DoG) SIFT feature extraction.
+    \item \textbf{FR-2.4 (Dense Feature Descriptors):} The system shall extract Histogram of Oriented Gradients (HOG) feature vectors across normalized spatial cell grids.
+    \item \textbf{FR-3.1 (Clustering-Based Segmentation):} The system shall segment images into $k$ color clusters using K-Means vector quantization in RGB/CIELAB space and Mean Shift density mode seeking.
+    \item \textbf{FR-3.2 (Region \& Contour Segmentation):} The system shall support seeded 4-connected Region Growing and edge-based contour hierarchical polygon extraction.
+    \item \textbf{FR-4.1 (Deep Learning Detection):} The system shall perform single-shot object detection using YOLOv8n, predicting bounding boxes, class labels (80 COCO classes), and confidence probabilities.
+    \item \textbf{FR-4.2 (Interactive NMS Tuning):} The system shall enable live manipulation of the confidence threshold ($0.10$ to $0.90$) and Intersection-over-Union (IoU) Non-Maximum Suppression threshold ($0.10$ to $0.90$).
+\end{itemize}
+
+\subsubsection{Mode B: Video Analysis}
+\begin{itemize}
+    \item \textbf{FR-5.1 (Video Decoding \& Stream Telemetry):} The system shall ingest standard video codecs (MP4, AVI, MOV, MKV) and extract resolution, frame rate (FPS), frame count, duration, and file size.
+    \item \textbf{FR-5.2 (Keyframe Temporal Sampling):} The system shall extract $N$ evenly-spaced keyframes across the timeline and render a horizontal visual summary strip with frame index markers.
+    \item \textbf{FR-6.1 (Multi-Object Tracking):} The system shall integrate YOLOv8n with the ByteTrack algorithm, maintaining persistent tracking IDs across temporal frames via Kalman filter state prediction and Hungarian matching.
+    \item \textbf{FR-6.2 (Temporal Decimation):} The system shall allow users to adjust the frame step parameter ($1$ to $30$) to optimize the trade-off between tracking accuracy and processing latency.
+    \item \textbf{FR-6.3 (Tracking Telemetry):} The system shall display an annotated keyframe grid, category frequency distribution charts, and a detailed tracking log table.
+    \item \textbf{FR-7.1 (Dense Optical Flow):} The system shall compute Gunnar Farneback dense optical flow fields and visualize motion vector orientation and velocity via an HSV color wheel mapping.
+    \item \textbf{FR-7.2 (Sparse Feature Tracking):} The system shall compute Lucas-Kanade pyramidal sparse optical flow (KLT) on Shi-Tomasi corner points.
+    \item \textbf{FR-7.3 (Adaptive Background Subtraction):} The system shall separate moving foreground objects from stationary scenes using Mixture of Gaussians (MOG2) and K-Nearest Neighbors (KNN).
+    \item \textbf{FR-7.4 (Motion Vector Analytics):} The system shall plot an 8-cardinal polar area direction histogram and a temporal motion magnitude time-series graph.
+\end{itemize}
+
+\section{Non-functional Requirements}
+\begin{itemize}
+    \item \textbf{NFR-1 (Performance \& Execution Latency):} Classical image filtering and feature extraction operations on standard $1080$p images shall execute in under $800$ milliseconds on standard consumer CPUs. Video processing pipelines shall support frame decimation to sustain processing speeds exceeding $15$ frames per second on CPU.
+    \item \textbf{NFR-2 (Usability \& Design Aesthetics):} The user interface shall employ a high-contrast dark glassmorphism design system featuring semi-transparent panels (`\texttt{rgba(15, 22, 40, 0.86)}`), backdrop blur filters ($20$px), crisp borders, and accessible typography (`\texttt{\#f8fafc}` primary, `\texttt{\#cbd5e1}` secondary) ensuring complete readability across ambient shader backgrounds.
+    \item \textbf{NFR-3 (Modularity \& Architectural Separation):} The backend shall strictly adhere to a modular architecture separating FastAPI endpoint routers (`\texttt{routers/}`), business logic and models (`\texttt{services/}`), and mathematical utilities (`\texttt{cv\_utils.py}`).
+    \item \textbf{NFR-4 (Portability \& Zero-Dependency Frontend):} The frontend shall operate entirely using native browser technologies (Vanilla HTML5, CSS3, ES6 JavaScript) without requiring Node.js, Webpack, or external package managers, enabling immediate hosting via any static web server.
+    \item \textbf{NFR-5 (Robustness \& Fault Tolerance):} The API shall validate file MIME types, sanitize multi-part payload boundaries, handle malformed binary headers gracefully, and return informative HTTP $4$xx/$5$xx JSON error contracts without crashing the ASGI daemon.
+    \item \textbf{NFR-6 (Interoperability \& Documentation):} All endpoints shall expose formal OpenAPI 3.0 schemas automatically rendered via interactive Swagger UI at `\texttt{/api/docs}`.
+\end{itemize}

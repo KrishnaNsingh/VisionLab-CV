@@ -1,0 +1,34 @@
+\section{Problem Statement}
+
+\subsection{The Pedagogical Gap in Computer Vision Education}
+Teaching and learning Computer Vision at the undergraduate engineering level presents unique pedagogical hurdles. Unlike standard software development, where program correctness can often be evaluated via Boolean unit tests or terminal printouts, computer vision algorithms operate on continuous spatial matrices and stochastic image noise. Consequently, comprehension depends heavily on empirical visual validation.
+
+In conventional university environments, including the practical sessions of CSE3010, students encounter the following systemic problems:
+
+\begin{enumerate}
+    \item \textbf{Isolation of Code and Mathematical Intuition:}
+    Students typically execute static Python scripts from a command-line interface or run fragmented cells within Jupyter notebooks. When tuning algorithmic parameters—such as the standard deviation $\sigma$ of a Gaussian smoothing kernel, the upper/lower hysteresis limits of the Canny edge detector, or the sensitivity factor $k$ of the Harris corner detector—students must repeatedly edit code, recompile, save output raster files, and open image viewers manually. This high-friction, asynchronous iteration cycle obstructs intuitive understanding of parameter sensitivity.
+
+    \item \textbf{The Classical vs. Modern Dichotomy:}
+    Curricula typically bifurcate computer vision into two disconnected eras: classical handcrafted feature engineering (Sobel, Harris, SIFT, HOG) and modern deep convolutional neural networks (YOLO, ResNet). Students frequently fail to comprehend that modern deep learning models still rely on spatial convolutions, gradient representations, and non-maximum suppression (NMS) principles derived from classical operators. A platform demonstrating both domains within a unified paradigm is missing.
+
+    \item \textbf{Invisibility of Temporal Dynamics in Video Processing:}
+    Core video analysis concepts—such as the brightness constancy constraint in optical flow:
+    \begin{equation}
+        I_x u + I_y v + I_t = 0
+    \end{equation}
+    and multi-target trajectory association using Kalman filters and the Hungarian algorithm—are inherently continuous and dynamic. Static figures in textbooks and lab manuals fail to convey how motion vector orientations respond to camera pan versus object translation, or how object identifiers are maintained during occlusion.
+
+    \item \textbf{Absence of Real-Time Comparative Visualization:}
+    Standard evaluation environments lack simultaneous split-screen rendering. Comparing an unenhanced histogram against its equalized counterpart, or comparing raw edge gradients against non-maximum-suppressed contours, requires side-by-side juxtaposition that simple scripts do not provide.
+\end{enumerate}
+
+\subsection{Project Objectives}
+To address these fundamental issues, \textbf{VisionLab} was engineered to achieve the following specific objectives:
+\begin{itemize}
+    \item \textbf{Objective 1 (Comprehensive Implementation):} Implement an extensive, authentic suite of over 30 computer vision algorithms covering low-level filtering, feature extraction, segmentation, deep learning detection, and video motion dynamics without resorting to simulated approximations or third-party cloud APIs.
+    \item \textbf{Objective 2 (Interactive Hyperparameter Sweeps):} Provide real-time UI controls (sliders, numerical counters, radio matrices) enabling live mathematical adjustment of convolution kernels ($3\times3$ to $31\times31$), hysteresis thresholds ($5$ to $400$), cluster counts ($k=2$ to $10$), and temporal decimation steps ($1$ to $30$).
+    \item \textbf{Objective 3 (Synchronized Dual-Pane Visualization):} Render original and processed media side-by-side with synchronized zoom and coordinate tracking to facilitate immediate visual delta perception.
+    \item \textbf{Objective 4 (Integrated Analytical Telemetry):} Pair visual renders with quantitative analytical dashboards (intensity histograms, category frequency donuts, polar motion vector charts, and tracking telemetry tables).
+    \item \textbf{Objective 5 (Zero-Friction Portability):} Package the entire system with an automated, zero-configuration local launch mechanism (`\texttt{start.bat}`) that provisions its own virtual environment and serves a lightweight, modern web frontend without requiring heavy JavaScript compilation frameworks.
+\end{itemize}

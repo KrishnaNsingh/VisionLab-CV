@@ -1,0 +1,308 @@
+\section{Implementation Details}
+
+This section details the mathematical formulations, computational algorithms, and concrete software implementations across VisionLab's seven core functional modules. Every algorithm is implemented natively in Python using OpenCV 4.10, NumPy 2.0, SciPy, scikit-image, and Ultralytics PyTorch.
+
+\subsection{Module 1: Low-Level Image Processing \& Filtering (CSE3010 Module 1)}
+
+\subsubsection{Spatial Convolutions and Discrete Filtering}
+Digital spatial filtering computes each output pixel $g(x,y)$ as a linear combination of neighborhood pixels within a kernel window $K$ of spatial dimensions $(2k+1) \times (2k+1)$:
+\begin{equation}
+    g(x,y) = f(x,y) * K(x,y) = \sum_{s=-k}^k \sum_{t=-k}^k f(x+s, y+t) K(s, t)
+\end{equation}
+
+\paragraph{Gaussian Blur Kernel Derivation}
+The isotropic 2D Gaussian distribution with standard deviation $\sigma$ is expressed as:
+\begin{equation}
+    G(x,y) = \frac{1}{2\pi\sigma^2} \exp\left( -\frac{x^2 + y^2}{2\sigma^2} \right)
+\end{equation}
+Because the Gaussian function is separable, $G(x,y) = G(x) \cdot G(y)$, 2D convolution is factored into two consecutive 1D convolutions, reducing computational complexity per pixel from $\mathcal{O}(k^2)$ to $\mathcal{O}(2k)$. In VisionLab, kernel dimension $k \in [3, 31]$ is dynamically parameterized via API requests.
+
+\paragraph{Median Filtering}
+Unlike linear Gaussian smoothing, the Median Filter is a non-linear rank-order filter that eliminates impulse (salt-and-pepper) noise without blurring step edges:
+\begin{equation}
+    g(x,y) = \operatorname{median} \Big\{ f(x+s, y+t) \;\Big|\; (s,t) \in W \Big\}
+\end{equation}
+
+\paragraph{Laplacian High-Pass Sharpening}
+High-frequency edge enhancement is obtained by subtracting the discrete second-order spatial derivative (Laplacian) from the source image:
+\begin{equation}
+    \nabla^2 f(x,y) = \frac{\partial^2 f}{\partial x^2} + \frac{\partial^2 f}{\partial y^2} \approx f(x+1,y) + f(x-1,y) + f(x,y+1) + f(x,y-1) - 4f(x,y)
+\end{equation}
+Combining the source image with the scaled Laplacian yields the sharpening convolution kernel:
+\begin{equation}
+    g(x,y) = f(x,y) - \nabla^2 f(x,y) \implies K_{\text{sharpen}} = \begin{bmatrix} 0 & -1 & 0 \\ -1 & 5 & -1 \\ 0 & -1 & 0 \end{bmatrix}
+\end{equation}
+
+\subsubsection{Intensity Transformations \& Histogram Equalization}
+Histogram Equalization flattens the probability density function (PDF) $p_r(r_k) = \frac{n_k}{MN}$ of image intensity levels $r_k \in [0, L-1]$ by mapping them through the cumulative distribution function (CDF):
+\begin{equation}
+    s_k = T(r_k) = (L - 1) \sum_{j=0}^k p_r(r_j) = \frac{L - 1}{MN} \sum_{j=0}^k n_j
+\end{equation}
+In VisionLab, color images undergo equalization by transforming from BGR to the YCrCb color space, applying equalization exclusively to the luminance channel $Y$, and converting back to BGR to preserve chromaticity without introducing hue distortions.
+
+\subsubsection{Optimal Intra-Class Variance Thresholding (Otsu's Method)}
+Otsu's algorithm calculates the optimal global threshold $t^*$ that maximizes between-class variance $\sigma_B^2(t)$ (equivalent to minimizing intra-class variance $\sigma_w^2(t)$) over the intensity histogram:
+\begin{equation}
+    \sigma_B^2(t) = \omega_0(t) \omega_1(t) \Big[ \mu_0(t) - \mu_1(t) \Big]^2
+\end{equation}
+where class probabilities $\omega_0(t), \omega_1(t)$ and class means $\mu_0(t), \mu_1(t)$ are evaluated for candidate split $t \in [0, 255]$:
+\begin{equation}
+    \omega_0(t) = \sum_{i=0}^t p_i, \quad \omega_1(t) = \sum_{i=t+1}^{L-1} p_i, \quad \mu_0(t) = \sum_{i=0}^t \frac{i \cdot p_i}{\omega_0(t)}, \quad \mu_1(t) = \sum_{i=t+1}^{L-1} \frac{i \cdot p_i}{\omega_1(t)}
+\end{equation}
+The optimal threshold is selected via:
+\begin{equation}
+    t^* = \arg\max_{0 \le t < L-1} \sigma_B^2(t)
+\end{equation}
+
+\subsubsection{Mathematical Morphology}
+Binary morphological operations are formulated using Minkowski set arithmetic between an image set $A$ and a structuring element $B$:
+\begin{align}
+    \text{Dilation: } & A \oplus B = \bigcup_{b \in B} A_b = \Big\{ z \;\Big|\; (\hat{B})_z \cap A \neq \emptyset \Big\} \\
+    \text{Erosion: } & A \ominus B = \bigcap_{b \in B} A_{-b} = \Big\{ z \;\Big|\; (B)_z \subseteq A \Big\} \\
+    \text{Opening: } & A \circ B = (A \ominus B) \oplus B \\
+    \text{Closing: } & A \bullet B = (A \oplus B) \ominus B \\
+    \text{Morphological Gradient: } & G(A) = (A \oplus B) - (A \ominus B)
+\end{align}
+VisionLab supports rectangular, elliptical, and cross-shaped structuring elements with tunable structuring kernel radii.
+
+\subsection{Module 2: Feature Extraction \& Keypoint Descriptors (CSE3010 Module 3)}
+
+\subsubsection{Multi-Stage Canny Edge Detection}
+The Canny edge detector is implemented via a rigorous 4-step pipeline:
+\begin{enumerate}
+    \item \textbf{Gaussian Smoothing:} Convolves input $I(x,y)$ with Gaussian kernel $G_\sigma$ to suppress high-frequency noise.
+    \item \textbf{Directional Gradient Calculation:} Computes first-order spatial derivatives using horizontal ($S_x$) and vertical ($S_y$) Sobel kernels:
+    \begin{equation}
+        I_x = I * \begin{bmatrix} -1 & 0 & 1 \\ -2 & 0 & 2 \\ -1 & 0 & 1 \end{bmatrix}, \quad I_y = I * \begin{bmatrix} -1 & -2 & -1 \\ 0 & 0 & 0 \\ 1 & 2 & 1 \end{bmatrix}
+    \end{equation}
+    The gradient magnitude $M(x,y)$ and orientation angle $\theta(x,y)$ are given by:
+    \begin{equation}
+        M(x,y) = \sqrt{I_x^2(x,y) + I_y^2(x,y)}, \quad \theta(x,y) = \operatorname{arctan2}\left(I_y(x,y),\, I_x(x,y)\right)
+    \end{equation}
+    \item \textbf{Non-Maximum Suppression (NMS):} Quantizes $\theta(x,y)$ into four sectors ($0^\circ, 45^\circ, 90^\circ, 135^\circ$). A candidate pixel $(x,y)$ is preserved if and only if $M(x,y)$ is strictly greater than its two immediate neighbors along the gradient normal vector.
+    \item \textbf{Hysteresis Thresholding:} Employs dual thresholds $T_{\text{high}}$ and $T_{\text{low}}$:
+    \begin{equation}
+        \text{Edge Pixel} = \begin{cases} 
+            \text{Strong Edge} & \text{if } M(x,y) \ge T_{\text{high}} \\
+            \text{Weak Edge} & \text{if } T_{\text{low}} \le M(x,y) < T_{\text{high}} \\
+            \text{Suppressed} & \text{if } M(x,y) < T_{\text{low}}
+        \end{cases}
+    \end{equation}
+    Weak edges are preserved via recursive 8-connected floodfill only if they connect to a strong edge pixel.
+\end{enumerate}
+
+\subsubsection{Harris Corner Detection}
+Corners represent 2D spatial locations where image intensity varies substantially in all directions. The local auto-correlation matrix (Structure Tensor) $M$ is defined over a window $W(x,y)$:
+\begin{equation}
+    M(x,y) = \sum_{(u,v) \in W} w(u,v) \begin{bmatrix} I_x^2(u,v) & I_x(u,v) I_y(u,v) \\ I_x(u,v) I_y(u,v) & I_y^2(u,v) \end{bmatrix}
+\end{equation}
+where $w(u,v)$ is a Gaussian weighting window. Rather than computing expensive eigenvalue decomposition ($\lambda_1, \lambda_2$), the Harris Corner Response $R$ is evaluated using the determinant and trace:
+\begin{equation}
+    R = \det(M) - k \cdot (\operatorname{trace}(M))^2 = (\lambda_1 \lambda_2) - k (\lambda_1 + \lambda_2)^2
+\end{equation}
+where empirical sensitivity factor $k \in [0.04, 0.06]$. Pixels satisfying $R > T_{\text{corner}}$ followed by local spatial non-maximum suppression are identified as stable corners.
+
+\subsubsection{Scale-Invariant Feature Transform (SIFT)}
+Scale invariance is achieved by transforming image $I(x,y)$ into scale space $L(x,y,\sigma)$ via progressive Gaussian smoothing:
+\begin{equation}
+    L(x,y,\sigma) = G(x,y,\sigma) * I(x,y)
+\end{equation}
+Subsequent scales separated by constant multiplicative factor $k = 2^{1/S}$ generate the Difference-of-Gaussians (DoG) metric:
+\begin{equation}
+    D(x,y,\sigma) = L(x,y,k\sigma) - L(x,y,\sigma)
+\end{equation}
+Keypoint candidates are detected by comparing each sample point against its 26 neighbors in a $3\times3\times3$ scale-space volume. Candidates undergo quadratic sub-pixel interpolation:
+\begin{equation}
+    \mathbf{z} = -\left( \frac{\partial^2 D}{\partial \mathbf{x}^2} \right)^{-1} \frac{\partial D}{\partial \mathbf{x}}
+\end{equation}
+Unstable edge responses are rejected by analyzing the Hessian ratio of eigenvalues. For each confirmed keypoint, local gradient orientations are accumulated into an orientation histogram to guarantee rotation invariance, culminating in a canonical 128-dimensional normalized feature vector.
+
+\subsubsection{Histogram of Oriented Gradients (HOG)}
+HOG captures local shape and object appearance by dividing the normalized image window into small spatial connected cells ($8\times8$ pixels). For each pixel within a cell, gradient magnitude $m$ and orientation $\theta$ cast votes into an orientation histogram comprising 9 angular bins spanning $0^\circ$ to $180^\circ$. Blocks of $2\times2$ cells are grouped into overlapping spatial regions and normalized via L2-norm with regularizer $\epsilon$:
+\begin{equation}
+    \mathbf{v}_{\text{norm}} = \frac{\mathbf{v}}{\sqrt{\|\mathbf{v}\|_2^2 + \epsilon^2}}
+\end{equation}
+
+\subsection{Module 3: Unsupervised Image Segmentation (CSE3010 Module 3 \& 4)}
+
+\subsubsection{K-Means Clustering Segmentation}
+Color-based clustering segments image pixels $X = \{x_1, x_2, \dots, x_N\} \subset \mathbb{R}^d$ ($d=3$ for RGB/CIELAB) into $k$ disjoint clusters $C = \{C_1, C_2, \dots, C_k\}$ by minimizing within-cluster sum of squares (inertia) $J$:
+\begin{equation}
+    J = \sum_{j=1}^k \sum_{x_i \in C_j} \|x_i - \mu_j\|^2
+\end{equation}
+The algorithm executes iteratively in two alternating phases:
+\begin{enumerate}
+    \item \textbf{Assignment Step:} Assign each pixel to the nearest cluster centroid $\mu_j$:
+    \begin{equation}
+        C_j^{(t)} = \Big\{ x_i \;\Big|\; \|x_i - \mu_j^{(t)}\| \le \|x_i - \mu_l^{(t)}\| \quad \forall\, 1 \le l \le k \Big\}
+    \end{equation}
+    \item \textbf{Centroid Update:} Recompute centroid coordinates as cluster arithmetic means:
+    \begin{equation}
+        \mu_j^{(t+1)} = \frac{1}{|C_j^{(t)}|} \sum_{x_i \in C_j^{(t)}} x_i
+    \end{equation}
+\end{enumerate}
+Iterations terminate when centroid drift falls below convergence tolerance $\epsilon = 1.0 \times 10^{-4}$ or maximum iteration limit $T = 100$ is reached.
+
+\subsubsection{Mean Shift Mode-Seeking}
+Mean Shift is a non-parametric density estimation technique that locates local maxima (modes) of a probability density function without prescribing the number of clusters $k$. For candidate spatial-color point $x$, the mean shift vector with bandwidth parameter $h$ is formulated as:
+\begin{equation}
+    m_h(x) = \frac{\sum_{i=1}^n x_i \exp\left( -\frac{\|x - x_i\|^2}{2h^2} \right)}{\sum_{i=1}^n \exp\left( -\frac{\|x - x_i\|^2}{2h^2} \right)} - x
+\end{equation}
+Each data point translates iteratively along gradient path $x \leftarrow x + m_h(x)$ until convergence to a stationary mode. Points converging to identical modes are fused into continuous segments.
+
+\subsection{Module 4: Deep Learning Object Detection via YOLOv8}
+
+\subsubsection{YOLOv8 Architecture \& Anchor-Free Head}
+VisionLab utilizes the Ultralytics YOLOv8n (nano) architecture. Unlike earlier anchor-based detectors (YOLOv3/v4), YOLOv8 features an \textbf{anchor-free decoupled head}:
+\begin{itemize}
+    \item \textbf{Backbone:} Modified CSPDarknet53 utilizing $C2f$ (Cross-Stage Partial with two convolutions) modules, enhancing gradient propagation through residual cross-stage bottleneck connections.
+    \item \textbf{Neck:} Path Aggregation Network (PANet) combining multi-scale top-down and bottom-up feature pyramid abstractions.
+    \item \textbf{Decoupled Head:} Class probabilities and bounding box coordinates are predicted by separate convolutional branches, avoiding gradient conflicts between classification and spatial regression tasks.
+\end{itemize}
+
+\subsubsection{Bounding Box Regression \& Non-Maximum Suppression}
+Box spatial regression employs Task-Aligned Assigner matching with Complete IoU (CIoU) and Distribution Focal Loss (DFL):
+\begin{equation}
+    \mathcal{L}_{\text{CIoU}} = 1 - \operatorname{IoU} + \frac{\rho^2(b, b^{gt})}{c^2} + \alpha v
+\end{equation}
+where $\rho(b, b^{gt})$ represents Euclidean distance between bounding box centers, $c$ is the diagonal length of the smallest enclosing box, and $v$ quantifies aspect ratio consistency.
+
+Post-processing applies Non-Maximum Suppression (NMS) parameterized by confidence threshold $\tau_{\text{conf}}$ and IoU overlap threshold $\tau_{\text{IoU}}$:
+\begin{equation}
+    \operatorname{IoU}(B_i, B_j) = \frac{\operatorname{Area}(B_i \cap B_j)}{\operatorname{Area}(B_i \cup B_j)}
+\end{equation}
+Boxes satisfying $\operatorname{IoU}(B_i, B_j) > \tau_{\text{IoU}}$ with lower confidence than the active candidate are greedily suppressed.
+
+\subsection{Module 5: Multi-Object Tracking via ByteTrack}
+
+\subsubsection{Kalman Filter Kinematic State Prediction}
+Each tracked target $i$ maintains an 8-dimensional kinematic state vector:
+\begin{equation}
+    \mathbf{x} = \Big[ u, \; v, \; s, \; r, \; \dot{u}, \; \dot{v}, \; \dot{s}, \; \dot{r} \Big]^T
+\end{equation}
+where $(u,v)$ specifies bounding box 2D center coordinates, $s = w \times h$ denotes bounding box area scale, $r = w/h$ is aspect ratio, and dotted variables denote instantaneous velocities. State transitions follow a constant-velocity discrete kinematic model:
+\begin{equation}
+    \mathbf{x}_k = \mathbf{F} \mathbf{x}_{k-1} + \mathbf{w}_k, \quad \mathbf{P}_k = \mathbf{F} \mathbf{P}_{k-1} \mathbf{F}^T + \mathbf{Q}
+\end{equation}
+where $\mathbf{F}$ is the state transition matrix, $\mathbf{P}$ is error covariance, and $\mathbf{Q}$ represents process noise covariance.
+
+\subsubsection{Two-Stage Bipartite Association (ByteTrack)}
+Conventional tracking algorithms discard detections below confidence threshold $\tau_{\text{high}}$. ByteTrack retains all detections by partitioning them into high-confidence $D_{\text{high}} = \{d \mid \operatorname{conf}(d) \ge \tau_{\text{high}}\}$ and low-confidence $D_{\text{low}} = \{d \mid \tau_{\text{low}} \le \operatorname{conf}(d) < \tau_{\text{high}}\}$ sets:
+\begin{enumerate}
+    \item \textbf{First Association:} Associates existing Kalman-predicted tracks $T$ with $D_{\text{high}}$ using the Hungarian algorithm on an IoU distance cost matrix:
+    \begin{equation}
+        C_{ij} = 1 - \operatorname{IoU}(T_i, D_{\text{high}, j})
+    \end{equation}
+    \item \textbf{Second Association:} Unmatched active tracks $T_{\text{remain}}$ from the first stage are matched against $D_{\text{low}}$ to recover temporarily occluded objects without creating false positives.
+\end{enumerate}
+
+\subsection{Module 6: Motion Analysis \& Optical Flow (CSE3010 Module 4)}
+
+\subsubsection{Optical Flow Constraint Equation}
+Assuming brightness constancy between consecutive temporal frames separated by interval $\Delta t$:
+\begin{equation}
+    I(x, y, t) = I(x + \Delta x, y + \Delta y, t + \Delta t)
+\end{equation}
+First-order Taylor series expansion yields the fundamental optical flow constraint:
+\begin{equation}
+    I_x u + I_y v + I_t = 0 \iff \nabla I \cdot \mathbf{v} + I_t = 0
+\end{equation}
+where $u = \frac{dx}{dt}, v = \frac{dy}{dt}$ represent velocity components, and $I_x, I_y, I_t$ are spatial and temporal partial derivatives.
+
+\subsubsection{Lucas-Kanade Sparse Optical Flow (KLT)}
+Because a single scalar equation cannot resolve two unknowns $(u,v)$ (the aperture problem), Lucas-Kanade assumes spatial velocity consistency over a local window $W$ ($n \times n$ pixels). Formulating the overdetermined linear system:
+\begin{equation}
+    \begin{bmatrix} I_x(p_1) & I_y(p_1) \\ I_x(p_2) & I_y(p_2) \\ \vdots & \vdots \\ I_x(p_n) & I_y(p_n) \end{bmatrix} \begin{bmatrix} u \\ v \end{bmatrix} = - \begin{bmatrix} I_t(p_1) \\ I_t(p_2) \\ \vdots \\ I_t(p_n) \end{bmatrix} \iff \mathbf{A} \mathbf{v} = -\mathbf{b}
+\end{equation}
+Solving via least squares yields:
+\begin{equation}
+    \mathbf{v} = \left(\mathbf{A}^T \mathbf{A}\right)^{-1} \mathbf{A}^T (-\mathbf{b}) \iff \begin{bmatrix} u \\ v \end{bmatrix} = \begin{bmatrix} \sum I_x^2 & \sum I_x I_y \\ \sum I_x I_y & \sum I_y^2 \end{bmatrix}^{-1} \begin{bmatrix} -\sum I_x I_t \\ -\sum I_y I_t \end{bmatrix}
+\end{equation}
+Large displacements are tracked by cascading computation across an image Gaussian pyramid.
+
+\subsubsection{Gunnar Farneback Dense Optical Flow}
+Farneback's method models neighborhood pixel intensities as continuous quadratic polynomial surfaces:
+\begin{equation}
+    f_1(\mathbf{x}) = \mathbf{x}^T \mathbf{A}_1 \mathbf{x} + \mathbf{b}_1^T \mathbf{x} + c_1, \quad f_2(\mathbf{x}) = (\mathbf{x} - \mathbf{d})^T \mathbf{A}_1 (\mathbf{x} - \mathbf{d}) + \mathbf{b}_1^T (\mathbf{x} - \mathbf{d}) + c_1
+\end{equation}
+Equating quadratic coefficients across successive frames determines the dense displacement field $\mathbf{d}$. In VisionLab, dense vector angles $\theta = \operatorname{arctan2}(v, u)$ are mapped to HSV hue $[0^\circ, 360^\circ]$ and normalized magnitudes $M = \sqrt{u^2 + v^2}$ to HSV value $[0, 255]$, yielding intuitive color-coded motion field visual maps.
+
+\subsubsection{Adaptive Background Subtraction (MOG2)}
+Moving foreground objects are separated from dynamic background geometry using an adaptive Gaussian Mixture Model (MOG2). The probability of observing intensity $X_t$ at pixel location $(x,y)$ is parameterized by $K$ Gaussian distributions:
+\begin{equation}
+    P(X_t) = \sum_{i=1}^K \omega_{i,t} \cdot \eta(X_t; \mu_{i,t}, \Sigma_{i,t})
+\end{equation}
+Parameters $\omega_{i,t}, \mu_{i,t}, \Sigma_{i,t}$ are dynamically updated online using learning rate $\alpha$. Shadow pixels are classified by detecting intensity reductions without chromaticity shifts, preventing false positive shadow silhouettes.
+
+\subsection{Module 7: Video Keyframe Extraction \& Stream Telemetry}
+Video streams are decoded asynchronously via `\texttt{cv2.VideoCapture}`. Telemetry metadata is extracted directly from the video container headers:
+\begin{equation}
+    T_{\text{duration}} = \frac{N_{\text{total\_frames}}}{\text{FPS}}, \quad \text{Aspect Ratio} = \frac{\text{Width}}{\text{Height}}
+\end{equation}
+Temporal decimation samples $M$ uniformly-spaced representative keyframes:
+\begin{equation}
+    \mathcal{F}_{\text{key}} = \left\{ \left\lfloor k \cdot \frac{N_{\text{total\_frames}}}{M} \right\rfloor \;\Bigg|\; k = 0, 1, \dots, M-1 \right\}
+\end{equation}
+Each keyframe is encoded into JPEG Base64 payload representations, facilitating lightweight JSON transfer to the web client.
+
+\subsection{Core Code Implementation Snippets}
+Listing~\ref{lst:canny_harris} demonstrates the unified feature extraction pipeline, and Listing~\ref{lst:farneback} illustrates dense optical flow field computation and HSV visualization mapping.
+
+\begin{lstlisting}[language=Python, caption={Feature Extraction Implementation in backend/routers/feature\_analysis.py.}, label={lst:canny_harris}]
+@router.post("/canny")
+async def extract_canny_edges(
+    file: UploadFile = File(...),
+    threshold1: float = Form(100.0),
+    threshold2: float = Form(200.0),
+    aperture_size: int = Form(3),
+    l2_gradient: bool = Form(False)
+):
+    start_time = time.perf_counter()
+    image = read_image_from_upload(await file.read())
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # 4-stage Canny edge execution
+    edges = cv2.Canny(
+        gray, 
+        threshold1=threshold1, 
+        threshold2=threshold2, 
+        apertureSize=aperture_size, 
+        L2gradient=l2_gradient
+    )
+    
+    # Quantitative edge metrics
+    edge_density = float(np.count_nonzero(edges)) / float(edges.size)
+    elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+    
+    return {
+        "success": True,
+        "processed_image": encode_image_to_base64(edges),
+        "telemetry": {
+            "edge_density": round(edge_density, 4),
+            "edge_pixels": int(np.count_nonzero(edges)),
+            "latency_ms": round(elapsed_ms, 2)
+        }
+    }
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={Dense Optical Flow Computation in backend/routers/motion\_analysis.py.}, label={lst:farneback}]
+def compute_dense_optical_flow(prev_gray, curr_gray):
+    # Gunnar Farneback polynomial expansion flow estimation
+    flow = cv2.calcOpticalFlowFarneback(
+        prev_gray, curr_gray, None,
+        pyr_scale=0.5, levels=3, winsize=15,
+        iterations=3, poly_n=5, poly_sigma=1.2, flags=0
+    )
+    
+    # Convert cartesian velocity (u, v) to polar (magnitude, angle)
+    magnitude, angle = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+    
+    # Map polar coordinates to HSV color wheel representation
+    hsv = np.zeros((prev_gray.shape[0], prev_gray.shape[1], 3), dtype=np.uint8)
+    hsv[..., 0] = angle * 180 / np.pi / 2          # Hue = Direction
+    hsv[..., 1] = 255                              # Saturation = Max
+    hsv[..., 2] = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX) # Value = Velocity
+    
+    rgb_flow = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    return rgb_flow, float(np.mean(magnitude)), float(np.max(magnitude))
+\end{lstlisting}

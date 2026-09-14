@@ -1,0 +1,179 @@
+\documentclass[12pt,a4paper]{article}
+
+% ==============================================================================
+% PACKAGES & SYSTEM CONFIGURATION
+% ==============================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in,headheight=16pt,top=1in,bottom=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, arrows.meta, positioning, fit, calc, shadows}
+
+% Color Definitions
+\definecolor{vitblue}{RGB}{20, 40, 110}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.98,0.99}
+
+% Hyperref Setup
+\usepackage[colorlinks=true, linkcolor=vitblue, citecolor=blue, urlcolor=cyan]{hyperref}
+
+% Code Listing Configuration
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{vitblue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4,
+    frame=single,
+    rulecolor=\color{gray!30}
+}
+\lstset{style=mystyle}
+
+% ==============================================================================
+% MANDATORY HEADER / FOOTER SPECIFICATION
+% Author: Krishna Narayan Singh | Roll No: 24BAI10230 (Top Left of Every Page)
+% ==============================================================================
+\pagestyle{fancy}
+\fancyhf{} % Clear existing headers/footers
+\fancyhead[L]{\textbf{Roll No: 24BAI10230} \quad \textit{Krishna Narayan Singh}}
+\fancyhead[R]{\nouppercase{\leftmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+% Override plain pagestyle (used for ToC and section starts)
+\fancypagestyle{plain}{
+    \fancyhf{}
+    \fancyhead[L]{\textbf{Roll No: 24BAI10230} \quad \textit{Krishna Narayan Singh}}
+    \fancyhead[R]{\textit{CSE3010: Computer Vision}}
+    \fancyfoot[C]{\thepage}
+    \renewcommand{\headrulewidth}{0.5pt}
+    \renewcommand{\footrulewidth}{0.5pt}
+}
+
+% ==============================================================================
+% DOCUMENT CONTENT
+% ==============================================================================
+\begin{document}
+
+% ------------------------------------------------------------------------------
+% 1. COVER PAGE
+% ------------------------------------------------------------------------------
+\begin{titlepage}
+    \thispagestyle{empty}
+    \centering
+    
+    % University Logo
+    \includegraphics[width=0.55\textwidth]{images/vit_logo.jpg}\\[0.6cm]
+    
+    {\large\textbf{\color{vitblue}VELLORE INSTITUTE OF TECHNOLOGY (VIT) BHOPAL UNIVERSITY}}\\[0.15cm]
+    {\small Bhopal-Indore Highway, Kothrikalan, Sehore, Madhya Pradesh -- 466114, India}\\[0.4cm]
+    {\textbf{SCHOOL OF COMPUTING SCIENCE AND ENGINEERING (SCSE)}}\\[1.0cm]
+    
+    \rule{\textwidth}{1.8pt}\\[0.4cm]
+    {\huge\textbf{\color{vitblue}VisionLab: Intelligent Image \& Video Analysis Platform}}\\[0.3cm]
+    {\large\textit{A Full-Stack Educational Computer Vision Laboratory}}\\[0.3cm]
+    \rule{\textwidth}{1.8pt}\\[1.0cm]
+    
+    \textbf{\Large Academic Project Evaluation Report}\\[0.3cm]
+    {\large Course Code: \textbf{CSE3010} \quad$|$\quad Course Title: \textbf{Computer Vision}}\\[0.15cm]
+    {\small Course Type: Embedded Theory \& Lab (LP) \quad$|$\quad Credits: 3}\\[1.2cm]
+    
+    \begin{minipage}{0.85\textwidth}
+        \large
+        \renewcommand{\arraystretch}{1.3}
+        \begin{tabular}{ll}
+            \textbf{Student Author:} & \textbf{Krishna Narayan Singh} \\
+            \textbf{Registration / Roll No.:} & \textbf{24BAI10230} \\
+            \textbf{Academic Programme:} & B.Tech. Computer Science \& Engineering \\
+             & (Specialization in Artificial Intelligence) \\
+            \textbf{Academic Year:} & 2026 -- 2027 \\
+            \textbf{Date of Submission:} & September 15, 2026 \\
+        \end{tabular}
+    \end{minipage}
+    
+    \vfill
+    {\small Submitted in partial fulfillment of the continuous evaluation requirements for the course \textbf{CSE3010: Computer Vision}.}
+\end{titlepage}
+
+% Frontmatter
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\listoffigures
+\listoftables
+\clearpage
+
+% Main Body
+\pagenumbering{arabic}
+
+% Set section counter to 1 so that the first numbered section is Section 2 (Introduction),
+% matching the user's strict 15-item syllabus requirement where Item 1 is the Cover Page.
+\setcounter{section}{1}
+
+% 2. Introduction
+\input{sections/01_introduction.tex}
+\clearpage
+
+% 3. Problem Statement
+\input{sections/02_problem_statement.tex}
+\clearpage
+
+% 4. Functional Requirements & 5. Non-functional Requirements
+\input{sections/03_requirements.tex}
+\clearpage
+
+% 6. System Architecture
+\input{sections/04_architecture.tex}
+\clearpage
+
+% 7. Design Diagrams (Use Case, Workflow, Sequence, Class/Component, ER)
+\input{sections/05_design_diagrams.tex}
+\clearpage
+
+% 8. Design Decisions & Rationale
+\input{sections/06_design_decisions.tex}
+\clearpage
+
+% 9. Implementation Details
+\input{sections/07_implementation.tex}
+\clearpage
+
+% 10. Screenshots / Results
+\input{sections/08_results.tex}
+\clearpage
+
+% 11. Testing Approach
+\input{sections/09_testing.tex}
+\clearpage
+
+% 12. Challenges Faced & 13. Learnings & Key Takeaways
+\input{sections/10_challenges_learnings.tex}
+\clearpage
+
+% 14. Future Enhancements & 15. References
+\input{sections/11_future_references.tex}
+
+\end{document}

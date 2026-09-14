@@ -1,0 +1,104 @@
+\section{System Architecture}
+
+\subsection{Architectural Pattern Overview}
+VisionLab is engineered following a \textbf{Decoupled 5-Tier Client-Server Architecture}. The system strictly decouples the client-side presentation and interaction layer from the server-side computational vision pipelines, communicating over asynchronous HTTP/REST protocols with JSON and multipart/form-data payloads.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        layer/.style={rectangle, draw=cyan!70, fill=blue!8, rounded corners=6pt, very thick, text width=0.88\textwidth, inner sep=8pt},
+        arrow/.style={-{Stealth[scale=1.2]}, very thick, draw=cyan!80}
+    ]
+        % Layer 1
+        \node[layer] (L1) {
+            \textbf{\large Tier 1: Client Presentation \& Interaction Layer (Port 5500)} \\
+            \small $\bullet$ Vanilla HTML5 / Modern CSS3 Glassmorphism System \quad $\bullet$ Three.js r128 WebGL Fragment Shader \\
+            $\bullet$ Chart.js 4.4 Dynamic Visualization Engine \quad $\bullet$ Canvas 2D Rendering \& Split View Controller
+        };
+        
+        % Layer 2
+        \node[layer, below=0.7cm of L1, draw=purple!70, fill=purple!8] (L2) {
+            \textbf{\large Tier 2: API Gateway \& Network Protocol Layer (Port 8000)} \\
+            \small $\bullet$ FastAPI Asynchronous ASGI Server (Uvicorn / Python 3.13) \quad $\bullet$ CORS Security Middleware \\
+            $\bullet$ Multipart/Form-Data Binary Ingestion Stream \quad $\bullet$ Pydantic v2 Schema Validation \& Serialization
+        };
+        
+        % Layer 3
+        \node[layer, below=0.7cm of L2, draw=green!70, fill=green!8] (L3) {
+            \textbf{\large Tier 3: Classical Computer Vision Core (OpenCV 4.10 / NumPy 2.0)} \\
+            \small $\bullet$ Module 1: Preprocessing \& Convolutions (Gaussian, Median, Laplacian, Otsu, Morphology) \\
+            $\bullet$ Module 2: Feature Geometry (Sobel, Canny, Harris, SIFT 128-D, HOG, Hough Lines) \\
+            $\bullet$ Module 3: Segmentation Algorithms (K-Means, Mean Shift, Region Growing, Contours)
+        };
+        
+        % Layer 4
+        \node[layer, below=0.7cm of L3, draw=orange!70, fill=orange!8] (L4) {
+            \textbf{\large Tier 4: Deep Learning \& Video Temporal Engine (PyTorch / Ultralytics)} \\
+            \small $\bullet$ Module 4: YOLOv8n Deep CNN Object Detector (COCO 80 Categories, Anchor-Free Head) \\
+            $\bullet$ Module 5: Video Decoding, Telemetry Extraction \& Keyframe Uniform Sampling \\
+            $\bullet$ Module 6: ByteTrack Multi-Target Association (Kalman State Prediction + Hungarian Matching) \\
+            $\bullet$ Module 7: Motion Dynamics (Farneback Dense Flow, Lucas-Kanade KLT, MOG2/KNN Subtraction)
+        };
+        
+        % Layer 5
+        \node[layer, below=0.7cm of L4, draw=magenta!70, fill=magenta!8] (L5) {
+            \textbf{\large Tier 5: Telemetry, Export \& Benchmarking Layer} \\
+            \small $\bullet$ JSON Structured Telemetry \& Performance Benchmarks \quad $\bullet$ Base64 Binary Frame Serializer \\
+            $\bullet$ One-Click Clipboard Formatter \quad $\bullet$ OpenAPI 3.0 Interactive Swagger Documentation
+        };
+        
+        % Connectors
+        \draw[arrow] (L1) -- node[right, font=\footnotesize] {HTTP POST (Multipart/Form-Data)} (L2);
+        \draw[arrow] (L2) -- node[right, font=\footnotesize] {Async Dispatch / OpenCV Matrices} (L3);
+        \draw[arrow] (L2.south east) -- node[right, font=\footnotesize] {PyTorch Tensor Ingestion} (L4.north east);
+        \draw[arrow] (L3) -- (L5);
+        \draw[arrow] (L4) -- (L5);
+        \draw[arrow] (L5.west) to[out=160,in=200] node[left, font=\footnotesize] {JSON Response + Base64 DataURIs} (L1.west);
+        
+    \end{tikzpicture}
+    \caption{High-Level 5-Tier System Architecture Diagram of VisionLab.}
+    \label{fig:system_arch}
+\end{figure}
+
+\subsection{Detailed Tier Breakdown}
+
+\subsubsection{Tier 1: Client Presentation \& Interaction Layer}
+The user interface is built strictly as a client-side Single-Page Application (SPA) executed directly inside the user's web browser. It features:
+\begin{itemize}
+    \item \textbf{Single-Page Router (`\texttt{app.js}`):} Employs URL hash-based routing (`\texttt{\#home}`, `\texttt{\#image}`, `\texttt{\#video}`, `\texttt{\#architecture}`) to dynamically mount page views without full document reloads.
+    \item \textbf{Glassmorphism Design System (`\texttt{styles.css}`):} Implements modern CSS custom properties with semi-transparent surfaces, dynamic border illumination, and backdrop blur filters.
+    \item \textbf{Comparative View Controller (`\texttt{image\_mode.js}`):} Coordinates the dual-canvas split view, handling local asset previews and rendering backend Base64 results.
+    \item \textbf{Analytics Dashboard (`\texttt{dashboard.js}`):} Encapsulates Chart.js renderers to plot intensity distributions, category frequency charts, polar motion vector roses, and temporal velocity line series.
+\end{itemize}
+
+\subsubsection{Tier 2: API Gateway \& Network Protocol Layer}
+Hosted by the Uvicorn ASGI daemon on port $8000$, FastAPI acts as the high-throughput gateway:
+\begin{itemize}
+    \item \textbf{Non-Blocking Concurrency:} Employs Python's `\texttt{async/await}` paradigm to process concurrent requests without thread-locking.
+    \item \textbf{Payload Handling:} Parses incoming `\texttt{multipart/form-data}` file buffers directly into in-memory byte streams using `\texttt{python-multipart}`, bypassing unnecessary disk I/O bottlenecks.
+    \item \textbf{CORS Middleware:} Configured to permit cross-origin asynchronous requests from the frontend running on port $5500$.
+\end{itemize}
+
+\subsubsection{Tier 3: Classical Computer Vision Core}
+This layer houses the analytical OpenCV implementations adhering to the CSE3010 syllabus:
+\begin{itemize}
+    \item Implements 2D spatial convolution filters using discrete matrix multiplication.
+    \item Computes directional derivatives, Hessian tensors, and structure matrices for interest point extraction.
+    \item Executes iterative color vector clustering in CIELAB/RGB space.
+    \item Shared image conversion helpers (`\texttt{cv\_utils.py}`) convert between NumPy multidimensional arrays and Base64-encoded DataURI strings.
+\end{itemize}
+
+\subsubsection{Tier 4: Deep Learning \& Video Temporal Engine}
+Encapsulates deep neural network inference and video temporal processing:
+\begin{itemize}
+    \item \textbf{YOLOv8 Singleton Service (`\texttt{yolo\_service.py}`):} Loads the PyTorch YOLOv8n weights into memory as a lazy singleton, avoiding repeated cold-start model initializations.
+    \item \textbf{ByteTrack Integration:} Maintains Kalman filter state representations for spatial motion and employs Hungarian bipartite matching to link detection bounding boxes across frames.
+    \item \textbf{Video Stream Analyzer:} Interacts with `\texttt{cv2.VideoCapture}` to decode video frames, sample keyframes at uniform temporal intervals, and compute optical flow vector fields.
+\end{itemize}
+
+\subsubsection{Tier 5: Telemetry, Export \& Benchmarking Layer}
+Serializes output matrices into standardized formats:
+\begin{itemize}
+    \item Formats computation execution times, object detection coordinates, and track histories into structured JSON responses.
+    \item Exposes OpenAPI 3.0 specification schemas, enabling automated client generation and API verification.
+\end{itemize}

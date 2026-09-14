@@ -1,0 +1,65 @@
+\section{Future Enhancements}
+
+While VisionLab delivers a rich, interactive Computer Vision platform encompassing low-level filtering, feature geometry, unsupervised segmentation, deep learning detection, and video tracking, several high-impact directions are identified for future iterations:
+
+\subsection{1. Integration of 3D Computer Vision and Stereo Reconstruction}
+The primary planned extension for VisionLab Version 2.0 is the incorporation of \textbf{3D Vision and Multi-Camera Views}, directly addressing the remaining modules of the CSE3010 curriculum (Module 2: Depth Estimation and Multi-Camera Views, and Module 5: Shape from X):
+\begin{itemize}
+    \item \textbf{Epipolar Geometry \& Stereo Disparity:} Implement Semi-Global Matching (SGM) and Block Matching algorithms on calibrated rectified stereo pairs to compute continuous depth maps ($Z = \frac{f \cdot B}{d}$).
+    \item \textbf{Structure from Motion (SfM):} Reconstruct sparse 3D point clouds from unordered multi-view photographs using feature matching, Essential matrix estimation via the 8-point algorithm, RANSAC outlier rejection, and bundle adjustment.
+    \item \textbf{Interactive 3D WebGL Viewer:} Integrate a Three.js point cloud renderer allowing users to pan, rotate, and measure reconstructed 3D point clouds and meshes directly inside the browser.
+\end{itemize}
+
+\subsection{2. WebRTC Live Camera Stream Processing}
+Currently, video analysis operates on uploaded container assets. Integrating WebRTC real-time media channels will enable:
+\begin{itemize}
+    \item Direct real-time browser webcam streaming to the FastAPI processing pipeline.
+    \item Sub-$50$\,ms low-latency multi-target tracking for live security camera feeds and smart room surveillance demonstrations.
+\end{itemize}
+
+\subsection{3. Instance Segmentation \& Polygonal Masking}
+Upgrading the object detection engine to YOLOv8-seg or Mask R-CNN will enable pixel-precise instance segmentation masks, allowing students to compare bounding-box localization with semantic contour segmentation on complex multi-instance scenes.
+
+\subsection{4. Client-Side Edge Inference via WebAssembly (Wasm)}
+Porting fundamental filtering algorithms to WebAssembly via OpenCV.js or ONNX Runtime Web will enable client-side edge computing. This offloads basic $3\times3$ convolutions and color conversions from the server, enabling fully offline operation for educational environments with limited connectivity.
+
+\subsection{5. Custom Convolution Kernel Playground}
+An interactive matrix laboratory where students can design arbitrary $N \times N$ discrete spatial convolution filters, inspect the 2D spatial frequency Fourier response $|\mathcal{F}(u,v)|$, and immediately observe the visual transformation on live imagery.
+
+\clearpage
+
+\section{References}
+
+\begin{enumerate}[label={[\arabic*]}]
+    \item \textbf{R. Szeliski}, \textit{Computer Vision: Algorithms and Applications}, 2nd ed. Springer-Verlag London, 2022. [CSE3010 Core Textbook]
+    
+    \item \textbf{D. A. Forsyth and J. Ponce}, \textit{Computer Vision: A Modern Approach}, 2nd ed. Pearson Education, 2012. [CSE3010 Core Textbook]
+    
+    \item \textbf{R. C. Gonzalez and R. E. Woods}, \textit{Digital Image Processing}, 4th ed. Pearson, 2018. [CSE3010 Reference Book]
+    
+    \item \textbf{R. Hartley and A. Zisserman}, \textit{Multiple View Geometry in Computer Vision}, 2nd ed. Cambridge University Press, 2004. [CSE3010 Reference Book]
+    
+    \item \textbf{K. Fukunaga}, \textit{Introduction to Statistical Pattern Recognition}, 2nd ed. Academic Press, Morgan Kaufmann, 1990. [CSE3010 Reference Book]
+    
+    \item \textbf{J. Canny}, ``A computational approach to edge detection,'' \textit{IEEE Transactions on Pattern Analysis and Machine Intelligence}, vol. PAMI-8, no. 6, pp. 679--698, Nov. 1986.
+    
+    \item \textbf{C. Harris and M. Stephens}, ``A combined corner and edge detector,'' in \textit{Proceedings of the 4th Alvey Vision Conference}, Manchester, UK, 1988, pp. 147--151.
+    
+    \item \textbf{D. G. Lowe}, ``Distinctive image features from scale-invariant keypoints,'' \textit{International Journal of Computer Vision}, vol. 60, no. 2, pp. 91--110, Nov. 2004.
+    
+    \item \textbf{N. Dalal and B. Triggs}, ``Histograms of oriented gradients for human detection,'' in \textit{IEEE Computer Society Conference on Computer Vision and Pattern Recognition (CVPR)}, San Diego, CA, USA, 2005, vol. 1, pp. 886--893.
+    
+    \item \textbf{N. Otsu}, ``A threshold selection method from gray-level histograms,'' \textit{IEEE Transactions on Systems, Man, and Cybernetics}, vol. 9, no. 1, pp. 62--66, Jan. 1979.
+    
+    \item \textbf{Y. Zhang, P. Sun, Y. Jiang, D. Yu, F. Weng, Z. Yuan, P. Luo, W. Liu, and X. Wang}, ``ByteTrack: Multi-object tracking by associating every detection box,'' in \textit{European Conference on Computer Vision (ECCV)}, Tel Aviv, Israel, Oct. 2022, pp. 1--21.
+    
+    \item \textbf{G. Jocher, A. Chaurasia, and J. Qiu}, ``Ultralytics YOLOv8,'' version 8.0.0, Jan. 2023. [Online]. Available: \url{https://github.com/ultralytics/ultralytics}
+    
+    \item \textbf{G. Farneb{\"a}ck}, ``Two-frame motion estimation based on polynomial expansion,'' in \textit{Image Analysis: 13th Scandinavian Conference (SCIA)}, Halmstad, Sweden, 2003, pp. 363--370.
+    
+    \item \textbf{B. D. Lucas and T. Kanade}, ``An iterative image registration technique with an application to stereo vision,'' in \textit{Proceedings of the 7th International Joint Conference on Artificial Intelligence (IJCAI)}, Vancouver, Canada, Aug. 1981, pp. 674--679.
+    
+    \item \textbf{Z. Zivkovic}, ``Improved adaptive Gaussian mixture model for background subtraction,'' in \textit{Proceedings of the 17th International Conference on Pattern Recognition (ICPR)}, Cambridge, UK, Aug. 2004, vol. 2, pp. 28--31.
+    
+    \item \textbf{Vellore Institute of Technology (VIT) Bhopal University}, ``CSE3010 Computer Vision Course Syllabus and Curriculum Document,'' Board of Studies Approval, Jan. 2020.
+\end{enumerate}
